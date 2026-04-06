@@ -1,0 +1,37 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: order-service
+#  datasource:
+#    url: jdbc:h2:mem:orderdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+#    driver-class-name: org.h2.Driver
+#    username: sa
+#    password:
+#  h2:
+#    console:
+#      enabled: true
+#     path: /h2-console
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:postgresql://localhost:5432/mypg
+    driver-class-name: org.postgresql.Driver
+    username: lynxman19
+    password: mcEnzey1Pg
+    hikari:
+      connectionTestQuery: SELECT 1
+      minimumIdle: 0
+      idleTimeout: 0
+      maximumPoolSize: 20
+      maxLifetime: 40000
+      connectionTimeout: 2000
+      poolName: SpringBootHikariCP
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+#        default_schema: order_service
+        format_sql: true
