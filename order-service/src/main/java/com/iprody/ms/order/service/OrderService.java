@@ -5,6 +5,9 @@ import com.iprody.ms.order.domain.model.entities.OrderLine;
 import com.iprody.ms.order.domain.model.valueobjects.Money;
 import com.iprody.ms.order.domain.repository.OrderRepository;
 import com.iprody.ms.order.common.ResourceNotFoundException;
+import com.iprody.ms.order.integration.payment.client.PaymentClient;
+import com.iprody.ms.order.integration.payment.dto.request.PaymentRequest;
+import com.iprody.ms.order.integration.payment.dto.response.PaymentResponse;
 import com.iprody.ms.order.service.dto.AddressDto;
 import com.iprody.ms.order.service.dto.MoneyDto;
 import com.iprody.ms.order.service.dto.OrderLineDto;
@@ -16,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.iprody.ms.order.service.dto.OrderDto;
 
 import com.iprody.ms.order.domain.model.valueobjects.Address;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -24,6 +28,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final PaymentClient paymentClient;
 
     public OrderDto getById(Long orderId) {
         return transformToOrderDto(getOrder(orderId));
@@ -36,6 +41,7 @@ public class OrderService {
                 .toList();
     }
 
+    @Transactional
     public OrderDto create(OrderExecute orderExecute) {
         Order order = new Order(
                 orderExecute.customerId(),
@@ -44,6 +50,11 @@ public class OrderService {
                 transformToOrderLines(orderExecute.lines())
         );
         return transformToOrderDto(orderRepository.save(order));
+    }
+
+    @Transactional
+    public PaymentResponse createPayment(PaymentRequest paymentRequest) {
+        return paymentClient.createPayment(paymentRequest);
     }
 
     @Transactional
@@ -74,7 +85,6 @@ public class OrderService {
     private OrderDto transformToOrderDto(Order order) {
         return new OrderDto(
                 order.getOrderId(),
-//                order.getCustomer(),
                 order.getCustomerId(),
                 order.getStatus(),
                 order.getCreatedAt(),

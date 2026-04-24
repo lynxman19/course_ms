@@ -6,7 +6,7 @@ GRANT USAGE ON SCHEMA delivery_service TO ms_user;
 --------------------
 
 create table delivery_service.deliveries (
-                                      id bigint primary key,
+                                      id serial primary key,
                                       order_id bigint not null,
                                       status varchar(16) not null,
                                       street varchar(255) not null,

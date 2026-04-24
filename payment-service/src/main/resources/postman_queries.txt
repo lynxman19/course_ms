@@ -1,0 +1,16 @@
+// Samples of the Postman queries
+
+curl --location 'http://localhost:8082/api/payments/1'
+
+--
+
+curl --location 'http://localhost:8082/api/payments/create' \
+--header 'Content-Type: application/json' \
+--data '{
+    "orderId": 2,
+    "status": "AUTHORIZED",
+    "method": "CARD",
+    "amount": {
+        "amount": 30.00
+    }
+}'

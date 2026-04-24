@@ -14,9 +14,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Table(schema = "order_service", name = "order_lines")
 public class OrderLine {
-//    @Id
-//    @ManyToOne(cascade= CascadeType.ALL) Order order;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id")
@@ -42,9 +39,9 @@ public class OrderLine {
         }
         this.quantity = quantity;
 
-        if (price == null) {
+        if (money == null) {
             throw new IllegalArgumentException("Необходимо ввести стоимость товара");
         }
-        this.price = price;
+        this.price = money;
     }
 }

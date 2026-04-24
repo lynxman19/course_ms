@@ -5,7 +5,7 @@ GRANT USAGE ON SCHEMA payment_service TO ms_user;
 
 create table payment_service.payments
 (
-    id          bigint primary key,
+    id          serial primary key,
     order_id    bigint,
     status      varchar(16)    not null,
     method      varchar(16)    not null,
