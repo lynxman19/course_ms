@@ -1,6 +1,7 @@
 package com.iprody.ms.payment.web.controller;
 
 import com.iprody.ms.payment.service.PaymentService;
+import com.iprody.ms.payment.web.dto.PaymentAmountResponse;
 import com.iprody.ms.payment.web.dto.PaymentRequest;
 import com.iprody.ms.payment.web.dto.PaymentResponse;
 import com.iprody.ms.payment.web.mapper.PaymentMapper;
@@ -33,9 +34,21 @@ public class PaymentController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping
+    @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PaymentResponse> create(@RequestBody PaymentRequest paymentRequest) {
+        // Искусственная проверка для FeignClient со стороны order-service
+        if (paymentRequest.getOrderId() >= 200) {
+            PaymentResponse response = new PaymentResponse(
+                    null,
+                    paymentRequest.getOrderId(),
+                    paymentRequest.getStatus(),
+                    paymentRequest.getMethod(),
+                    new PaymentAmountResponse(paymentRequest.getAmount().getAmount()),
+                    null);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+
         PaymentResponse response = mapper.mapToPaymentResponse(
                 paymentService.create(mapper.mapToExecutePayment(paymentRequest))
         );

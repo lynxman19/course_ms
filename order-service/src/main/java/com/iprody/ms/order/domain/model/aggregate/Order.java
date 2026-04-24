@@ -35,14 +35,10 @@ public class Order {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-//    @OneToMany(cascade = CascadeType.ALL, mappedBy = "order")
-//    @OrderBy ("orderLineId")
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "order_id", nullable = false)
     private List<OrderLine> orderLines = new ArrayList<>();
 
-//    @ManyToOne(cascade=CascadeType.ALL)
-//    Customer customer;
     @Column(nullable = false)
     private Long customerId;
 
