@@ -1,0 +1,3 @@
+// Samples of the Postman queries
+
+curl --location 'http://localhost:8083/api/deliveries/1'
