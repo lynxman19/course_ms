@@ -6,6 +6,7 @@ import com.iprody.ms.payment.domain.model.valueobjects.PaymentAmount;
 import com.iprody.ms.payment.domain.repository.PaymentRepository;
 import com.iprody.ms.payment.service.dto.PaymentAmountDto;
 import com.iprody.ms.payment.service.dto.PaymentDto;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -19,10 +20,12 @@ import java.util.List;
 public class PaymentService {
     private final PaymentRepository paymentRepository;
 
+    @CircuitBreaker(name = "paymentServiceCircuitBreaker")
     public PaymentDto getById(Long paymentId) {
         return transformToPaymentDto(getPayment(paymentId));
     }
 
+    @CircuitBreaker(name = "paymentServiceCircuitBreaker")
     public List<PaymentDto> getAll() {
         return paymentRepository.findAll()
                 .stream()
@@ -31,6 +34,7 @@ public class PaymentService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "paymentServiceCircuitBreaker")
     public PaymentDto create(PaymentExecute paymentExecute) {
         Payment payment = new Payment(
                 paymentExecute.orderId(),
@@ -42,6 +46,7 @@ public class PaymentService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "paymentServiceCircuitBreaker")
     public PaymentDto update(Long paymentId, PaymentExecute paymentExecute) {
         Payment payment = getPayment(paymentId);
         payment.update(
@@ -54,6 +59,7 @@ public class PaymentService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "paymentServiceCircuitBreaker")
     public void delete(Long paymentId) {
         if (!paymentRepository.existsById(paymentId)) {
             throw new ResourceNotFoundException("Платеж с идентификатором " + paymentId + " не был найден");

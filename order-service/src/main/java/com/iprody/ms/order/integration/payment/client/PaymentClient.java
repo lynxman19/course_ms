@@ -1,14 +1,18 @@
 package com.iprody.ms.order.integration.payment.client;
 
+import com.iprody.ms.order.common.PaymentServiceException;
 import com.iprody.ms.order.integration.payment.client.feign.PaymentFeignClient;
 import com.iprody.ms.order.integration.payment.dto.request.PaymentRequest;
 import com.iprody.ms.order.integration.payment.dto.response.PaymentResponse;
 import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
+
+import io.github.resilience4j.retry.annotation.Retry;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
@@ -20,6 +24,8 @@ public class PaymentClient {
     private final PaymentFeignClient paymentFeignClient;
     private final JsonMapper mapper;
 
+    @Retry(name = "paymentServiceRetry")
+    @CircuitBreaker(name = "paymentServiceCircuitBreaker")
     public PaymentResponse createPayment(PaymentRequest paymentRequest) {
         try {
             return paymentFeignClient.createPayment(UUID.fromString("97aace5a-965d-430b-a148-87ab2cc9ed8e"),
@@ -36,7 +42,7 @@ public class PaymentClient {
         if (isAcceptable(statusCode) && bodyOptional.isPresent()) {
             return getResponse(bodyOptional.get());
         } else {
-            throw new RuntimeException("Не была выполнена оплата заказа");
+            throw new PaymentServiceException("Не была выполнена оплата заказа " + ex.getMessage(), ex);
         }
     }
 

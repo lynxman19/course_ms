@@ -12,6 +12,7 @@ import com.iprody.ms.order.service.dto.AddressDto;
 import com.iprody.ms.order.service.dto.MoneyDto;
 import com.iprody.ms.order.service.dto.OrderLineDto;
 import com.iprody.ms.order.service.execute.OrderExecute;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +31,12 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final PaymentClient paymentClient;
 
+    @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public OrderDto getById(Long orderId) {
         return transformToOrderDto(getOrder(orderId));
     }
 
+    @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public List<OrderDto> getAll() {
         return orderRepository.findAll()
                 .stream()
@@ -42,6 +45,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public OrderDto create(OrderExecute orderExecute) {
         Order order = new Order(
                 orderExecute.customerId(),
@@ -54,10 +58,17 @@ public class OrderService {
 
     @Transactional
     public PaymentResponse createPayment(PaymentRequest paymentRequest) {
+        if (paymentRequest.method() == null) {
+            throw new IllegalArgumentException("Необходимо указать способо оплаты заказа");
+        }
+        if (paymentRequest.amount() == null) {
+            throw new IllegalArgumentException("Необходимо указать сумму оплаты заказа");
+        }
         return paymentClient.createPayment(paymentRequest);
     }
 
     @Transactional
+    @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public OrderDto update(Long orderId, OrderExecute orderExecute) {
         Order order = getOrder(orderId);
         order.update(
@@ -70,6 +81,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public void delete(Long orderId) {
         if (!orderRepository.existsById(orderId)) {
             throw new ResourceNotFoundException("Заказ с идентификатором " + orderId + " не был найден");

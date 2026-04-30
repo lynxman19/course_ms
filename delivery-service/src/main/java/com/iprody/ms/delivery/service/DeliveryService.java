@@ -9,6 +9,7 @@ import com.iprody.ms.delivery.service.dto.DeliveryAddressDto;
 import com.iprody.ms.delivery.service.dto.DeliveryDto;
 import com.iprody.ms.delivery.service.dto.TimeWindowDto;
 import com.iprody.ms.delivery.service.execute.DeliveryExecute;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +23,12 @@ import java.util.List;
 public class DeliveryService {
     private final DeliveryRepository deliveryRepository;
 
+    @CircuitBreaker(name = "deliveryServiceCircuitBreaker")
     public DeliveryDto getById(Long deliveryId) {
         return transformToDeliveryDto(getDelivery(deliveryId));
     }
 
+    @CircuitBreaker(name = "deliveryServiceCircuitBreaker")
     public List<DeliveryDto> getAll() {
         return deliveryRepository.findAll()
                 .stream()
@@ -34,6 +37,7 @@ public class DeliveryService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "deliveryServiceCircuitBreaker")
     public DeliveryDto create(DeliveryExecute deliveryExecute) {
         Delivery delivery = new Delivery(
                 deliveryExecute.orderId(),
@@ -47,6 +51,7 @@ public class DeliveryService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "deliveryServiceCircuitBreaker")
     public DeliveryDto update(Long deliveryId, DeliveryExecute deliveryExecute) {
         Delivery delivery = getDelivery(deliveryId);
         delivery.update(
@@ -61,6 +66,7 @@ public class DeliveryService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "deliveryServiceCircuitBreaker")
     public void delete(Long deliveryId) {
         if (!deliveryRepository.existsById(deliveryId)) {
             throw new ResourceNotFoundException("Доставка с идентификатором" + deliveryId + " не была найдена");
