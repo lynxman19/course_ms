@@ -12,6 +12,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Component
@@ -21,7 +22,8 @@ public class PaymentClient {
 
     public PaymentResponse createPayment(PaymentRequest paymentRequest) {
         try {
-            return paymentFeignClient.createPayment(paymentRequest);
+            return paymentFeignClient.createPayment(UUID.fromString("97aace5a-965d-430b-a148-87ab2cc9ed8e"),
+                                                    paymentRequest);
         } catch (FeignException ex) {
             return processException(ex);
         }

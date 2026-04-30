@@ -13,6 +13,15 @@ create table payment_service.payments
     created_at  timestamp
 );
 
+-- Создание таблицы idempotency_keys
+CREATE TABLE idempotency_keys (
+                                  key_value VARCHAR(255) PRIMARY KEY,
+                                  status VARCHAR(20) NOT NULL,
+                                  status_code INT,
+                                  response CLOB,
+                                  created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
 insert into payment_service.payments (
     id,
     order_id ,
