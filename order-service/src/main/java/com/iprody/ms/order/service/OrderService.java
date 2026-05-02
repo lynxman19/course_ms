@@ -13,6 +13,8 @@ import com.iprody.ms.order.service.dto.MoneyDto;
 import com.iprody.ms.order.service.dto.OrderLineDto;
 import com.iprody.ms.order.service.execute.OrderExecute;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.bulkhead.BulkheadFullException;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,7 +66,11 @@ public class OrderService {
         if (paymentRequest.amount() == null) {
             throw new IllegalArgumentException("Необходимо указать сумму оплаты заказа");
         }
-        return paymentClient.createPayment(paymentRequest);
+        try {
+            return paymentClient.createPayment(paymentRequest);
+        } catch (RequestNotPermitted | BulkheadFullException ex) {
+            throw ex;
+        }
     }
 
     @Transactional
