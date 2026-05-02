@@ -27,6 +27,7 @@ repositories {
 ext {
 	set('springCloudVersion', "2025.1.1")
 	openapiVersion = "3.0.3"
+	resilence4jVersion = "2.3.0"
 }
 
 
@@ -35,6 +36,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${openapiVersion}"
+//	implementation "io.github.resilience4j:resilence4j-all:${resilence4jVersion}"
+	implementation "io.github.resilience4j:resilience4j-spring-boot3:${resilence4jVersion}"
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.h2database:h2'

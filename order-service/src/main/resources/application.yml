@@ -26,3 +26,34 @@ spring:
       hibernate:
 #        default_schema: order_service
         format_sql: true
+
+resilience4j:
+  retry:
+    instances:
+      paymentServiceRetry:
+        maxAttempts: 3                 # Максимальное число попыток выполнения метода (включая первую)
+        waitDuration: 500ms            # Время ожидания между попытками
+        retryExceptions:
+          - feign.FeignException       # Исключения, при которых происходит повторная попытка
+        ignoreExceptions:
+          - java.lang.RuntimeException # Исключения, игнорируемые для повторных попыток
+  circuitbreaker:
+    instances:
+      paymentServiceCircuitBreaker:
+        registerHealthIndicator: true     # Включить мониторинг состояния цепи
+        slidingWindowSize: 50             # Размер окна для оценки ошибок (сколько вызовов учитывается)
+        failureRateThreshold: 50          # Процент ошибок, при котором цепь откроется
+        waitDurationInOpenState: 30s      # Время, в течение которого цепь останется открытой
+        permittedNumberOfCallsInHalfOpenState: 10 # Количество вызовов в полузакрытом состоянии для проверки
+        minimumNumberOfCalls: 20          # Минимальное число вызовов для оценки состояния цепи
+        recordExceptions:
+          - feign.FeignException          # Исключения, которые считаются ошибками
+        ignoreExceptions:
+          - java.lang.RuntimeException    # Исключения, которые игнорируются при оценке ошибок
+      orderServiceCircuitBreaker:
+        registerHealthIndicator: true     # Включить мониторинг состояния цепи
+        slidingWindowSize: 50             # Размер окна для оценки ошибок (сколько вызовов учитывается)
+        failureRateThreshold: 50          # Процент ошибок, при котором цепь откроется
+        waitDurationInOpenState: 30s      # Время, в течение которого цепь останется открытой
+        permittedNumberOfCallsInHalfOpenState: 10 # Количество вызовов в полузакрытом состоянии для проверки
+        minimumNumberOfCalls: 20          # Минимальное число вызовов для оценки состояния цепи
