@@ -5,7 +5,9 @@ import com.iprody.ms.order.integration.payment.client.feign.PaymentFeignClient;
 import com.iprody.ms.order.integration.payment.dto.request.PaymentRequest;
 import com.iprody.ms.order.integration.payment.dto.response.PaymentResponse;
 import feign.FeignException;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -26,6 +28,8 @@ public class PaymentClient {
 
     @Retry(name = "paymentServiceRetry")
     @CircuitBreaker(name = "paymentServiceCircuitBreaker")
+    @RateLimiter(name = "paymentClientRateLimiter")
+    @Bulkhead(name = "paymentClientBulkhead")
     public PaymentResponse createPayment(PaymentRequest paymentRequest) {
         try {
             return paymentFeignClient.createPayment(UUID.fromString("97aace5a-965d-430b-a148-87ab2cc9ed8e"),

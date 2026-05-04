@@ -1,6 +1,8 @@
 package com.iprody.ms.order.common;
 
+import io.github.resilience4j.bulkhead.BulkheadFullException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +23,23 @@ public class ApiExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(PaymentServiceException.class)
+    public ResponseEntity<ApiError> handleBadGateway(PaymentServiceException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_GATEWAY, exception.getMessage(), request.getRequestURI());
+    }
+
     @ExceptionHandler(CallNotPermittedException.class)
     public ResponseEntity<ApiError> handleCircuitBreakerOpen(CallNotPermittedException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "Service temporarily unavailable", request.getRequestURI());
+    }
+
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ApiError> handleRateLimiter(RequestNotPermitted exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded", request.getRequestURI());
+    }
+
+    @ExceptionHandler(BulkheadFullException.class)
+    public ResponseEntity<ApiError> handleBulkhead(BulkheadFullException exception, HttpServletRequest request) {
         return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "Service temporarily unavailable", request.getRequestURI());
     }
 
