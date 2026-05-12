@@ -69,3 +69,6 @@ resilience4j:
         limitRefreshPeriod: 1s  # Период, за который сбрасывается счетчик лимитов (например, 1 секунда)
         timeoutDuration: 0s     # Время ожидания, если лимит достигнут; 0 означает сразу отказ, без ожидания
 
+integration:
+  payment-service:
+    base-url: http://localhost:8082/api/payments

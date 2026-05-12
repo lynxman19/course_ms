@@ -43,6 +43,11 @@ public class ApiExceptionHandler {
         return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "Service temporarily unavailable", request.getRequestURI());
     }
 
+    @ExceptionHandler(DuplicateIdempotencyKeyException.class)
+    public ResponseEntity<ApiError> handleDuplicateIdempotencyKey(DuplicateIdempotencyKeyException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, "Same request is already in progress...", request.getRequestURI());
+    }
+
     private ResponseEntity<ApiError> buildResponse(HttpStatus status, String message, String path) {
         ApiError error = new ApiError(
                 LocalDateTime.now(),

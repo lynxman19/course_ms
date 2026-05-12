@@ -38,6 +38,7 @@ public class PaymentController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PaymentResponse> create(@RequestBody PaymentRequest paymentRequest) {
         // Искусственная проверка для FeignClient со стороны order-service
+/****
         if (paymentRequest.getOrderId() >= 200) {
             PaymentResponse response = new PaymentResponse(
                     null,
@@ -48,7 +49,7 @@ public class PaymentController {
                     null);
             return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         }
-
+****/
         PaymentResponse response = mapper.mapToPaymentResponse(
                 paymentService.create(mapper.mapToExecutePayment(paymentRequest))
         );

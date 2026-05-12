@@ -1,6 +1,6 @@
 package com.iprody.ms.order.integration.payment.client;
 
-import com.iprody.ms.order.common.PaymentServiceException;
+import com.iprody.ms.order.common.DuplicateIdempotencyKeyException;
 import com.iprody.ms.order.integration.payment.client.feign.PaymentFeignClient;
 import com.iprody.ms.order.integration.payment.dto.request.PaymentRequest;
 import com.iprody.ms.order.integration.payment.dto.response.PaymentResponse;
@@ -8,20 +8,20 @@ import feign.FeignException;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
-import io.github.resilience4j.retry.annotation.Retry;
-
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 @RequiredArgsConstructor
 @Component
-public class PaymentClient {
+public class PaymentClientPendingIdempotencyKey {
     private final PaymentFeignClient paymentFeignClient;
     private final JsonMapper mapper;
 
@@ -33,26 +33,23 @@ public class PaymentClient {
         try {
             return paymentFeignClient.createPayment(paymentRequest.orderId().toString(), paymentRequest);
         } catch (FeignException ex) {
-            return processException(ex);
+            processException(ex);
+            throw ex;
         }
     }
 
-    private PaymentResponse processException(FeignException ex) {
+    private void processException(FeignException ex) {
         HttpStatusCode statusCode = HttpStatusCode.valueOf(ex.status());
         Optional<ByteBuffer> bodyOptional = ex.responseBody();
 
-        if (isAcceptable(statusCode) && bodyOptional.isPresent()) {
-            return getResponse(bodyOptional.get());
-        } else {
-            throw new PaymentServiceException("Не была выполнена оплата заказа " + ex.getMessage(), ex);
+        if (statusCode.equals(HttpStatus.CONFLICT) && bodyOptional.isPresent()) {
+            String response = getResponse(bodyOptional.get());
+
+            throw new DuplicateIdempotencyKeyException(response);
         }
     }
 
-    private boolean isAcceptable(HttpStatusCode statusCode) {
-        return statusCode.is2xxSuccessful() || statusCode.isSameCodeAs(HttpStatus.CONFLICT);
-    }
-
-    private PaymentResponse getResponse(ByteBuffer body) {
-        return mapper.readValue(body.array(), PaymentResponse.class);
+    private String getResponse(ByteBuffer body) {
+        return StandardCharsets.UTF_8.decode(body).toString();
     }
 }
