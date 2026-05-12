@@ -7,7 +7,7 @@ import lombok.*;
 import java.time.ZonedDateTime;
 
 @Entity
-@Table(name = "idempotency_keys")
+@Table(schema = "payment_service", name = "idempotency_keys")
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = "key")
@@ -22,7 +22,6 @@ public class IdempotencyKey {
     @Enumerated(EnumType.STRING)
     private IdempotencyKeyStatus status;
 
-    @Lob
     private String response;
 
     private ZonedDateTime createdAt;

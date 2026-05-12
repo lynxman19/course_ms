@@ -27,10 +27,12 @@ public class IdempotencyService {
         }
     }
 
+    @Transactional
     public Optional<IdempotencyKey> getByKey(String key) {
         return repository.findById(key);
     }
 
+    @Transactional
     public void markAsCompleted(String key, String responseData, int statusCode) {
         var keyEntity = getByKey(key).orElseThrow(() -> new EntityNotFoundException("Key not found"));
         keyEntity.setStatus(IdempotencyKeyStatus.COMPLETED);

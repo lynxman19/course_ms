@@ -1,17 +1,20 @@
 package com.iprody.ms.order.service;
 
+import com.iprody.ms.order.common.DuplicateIdempotencyKeyException;
 import com.iprody.ms.order.domain.model.aggregate.Order;
 import com.iprody.ms.order.domain.model.entities.OrderLine;
 import com.iprody.ms.order.domain.model.valueobjects.Money;
 import com.iprody.ms.order.domain.repository.OrderRepository;
 import com.iprody.ms.order.common.ResourceNotFoundException;
 import com.iprody.ms.order.integration.payment.client.PaymentClient;
+import com.iprody.ms.order.integration.payment.client.PaymentClientPendingIdempotencyKey;
 import com.iprody.ms.order.integration.payment.dto.request.PaymentRequest;
 import com.iprody.ms.order.integration.payment.dto.response.PaymentResponse;
 import com.iprody.ms.order.service.dto.AddressDto;
 import com.iprody.ms.order.service.dto.MoneyDto;
 import com.iprody.ms.order.service.dto.OrderLineDto;
 import com.iprody.ms.order.service.execute.OrderExecute;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.bulkhead.BulkheadFullException;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
@@ -32,6 +35,7 @@ import java.util.List;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final PaymentClient paymentClient;
+    private final PaymentClientPendingIdempotencyKey paymentClientIdempotency;
 
     @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public OrderDto getById(Long orderId) {
@@ -66,9 +70,11 @@ public class OrderService {
         if (paymentRequest.amount() == null) {
             throw new IllegalArgumentException("Необходимо указать сумму оплаты заказа");
         }
+
         try {
-            return paymentClient.createPayment(paymentRequest);
-        } catch (RequestNotPermitted | BulkheadFullException ex) {
+            return paymentClientIdempotency.createPayment(paymentRequest);
+        } catch (RequestNotPermitted | BulkheadFullException | CallNotPermittedException |
+                 DuplicateIdempotencyKeyException ex) {
             throw ex;
         }
     }

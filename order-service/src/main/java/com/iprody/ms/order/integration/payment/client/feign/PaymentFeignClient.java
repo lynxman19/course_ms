@@ -9,9 +9,13 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.UUID;
 
-@FeignClient (name = "payment-service", url = "http://localhost:8082/api/payments")
+@FeignClient (name = "payment-service", url = "${integration.payment-service.base-url}")
 public interface PaymentFeignClient {
     @PostMapping("/create")
-    PaymentResponse createPayment(@RequestHeader("X-Idempotency-Key") UUID idempotencyKey,
+    PaymentResponse createPayment(@RequestHeader("X-Idempotency-Key") String idempotencyKey,
+                                  @RequestBody PaymentRequest paymentRequest);
+
+    @PostMapping("/create")
+    PaymentResponse createPaymentPendingIdempotencyKey(@RequestHeader("X-Idempotency-Key") String idempotencyKey,
                                   @RequestBody PaymentRequest paymentRequest);
 }

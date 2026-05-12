@@ -1,0 +1,3 @@
+integration:
+  payment-service:
+    base-url: http://localhost:9999/api/payments

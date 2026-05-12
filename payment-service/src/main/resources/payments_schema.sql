@@ -14,11 +14,11 @@ create table payment_service.payments
 );
 
 -- Создание таблицы idempotency_keys
-CREATE TABLE idempotency_keys (
+CREATE TABLE payment_service.idempotency_keys (
                                   key_value VARCHAR(255) PRIMARY KEY,
                                   status VARCHAR(20) NOT NULL,
                                   status_code INT,
-                                  response CLOB,
+                                  response text,
                                   created_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
@@ -41,3 +41,5 @@ values (
 commit;
 
 select * from payment_service.payments;
+
+select * from payment_service.idempotency_keys

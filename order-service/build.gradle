@@ -28,6 +28,7 @@ ext {
 	set('springCloudVersion', "2025.1.1")
 	openapiVersion = "3.0.3"
 	resilence4jVersion = "2.3.0"
+	wiremockIntegrationsVersion= "4.2.1"
 }
 
 
@@ -44,6 +45,7 @@ dependencies {
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation "org.wiremock.integrations:wiremock-spring-boot:${wiremockIntegrationsVersion}"
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
