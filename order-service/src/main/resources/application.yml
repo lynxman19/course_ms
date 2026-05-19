@@ -26,6 +26,11 @@ spring:
       hibernate:
 #        default_schema: order_service
         format_sql: true
+  rabbitmq:
+    username: admin
+    password: admin
+    addresses: amqp://localhost:5672
+
 
 resilience4j:
   retry:
@@ -72,3 +77,10 @@ resilience4j:
 integration:
   payment-service:
     base-url: http://localhost:8082/api/payments
+
+rabbitmq:
+  service:
+    payment:
+      exchange-request-name: payment-request-exchange
+      queue-request-name: payment-request-queue
+      queue-response-name: payment-response-queue

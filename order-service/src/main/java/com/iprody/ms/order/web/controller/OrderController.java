@@ -3,6 +3,7 @@ package com.iprody.ms.order.web.controller;
 import com.iprody.ms.order.integration.payment.dto.request.PaymentRequest;
 import com.iprody.ms.order.integration.payment.dto.response.PaymentResponse;
 import com.iprody.ms.order.service.OrderService;
+import com.iprody.ms.order.service.dto.OrderDto;
 import com.iprody.ms.order.web.controller.doc.OrderControllerDoc;
 import com.iprody.ms.order.web.dto.OrderRequest;
 import com.iprody.ms.order.web.dto.OrderResponse;
@@ -52,6 +53,16 @@ public class OrderController implements OrderControllerDoc {
         PaymentResponse paymentResponse = orderService.createPayment(paymentRequest);
         return ResponseEntity.ok(paymentResponse);
     }
+
+    @PostMapping("/{id}/payment/async")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<OrderResponse> createPaymentAsync(@PathVariable("id") Long orderId,
+                                                              @RequestBody PaymentRequest paymentRequest) {
+        OrderDto orderDto = orderService.createPaymentAsync(orderId, paymentRequest);
+        OrderResponse orderResponse = mapper.mapToOrderResponse(orderDto);
+        return ResponseEntity.ok(orderResponse);
+    }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<OrderResponse> update(@PathVariable("id") Long orderId, @RequestBody OrderRequest orderRequest) {
