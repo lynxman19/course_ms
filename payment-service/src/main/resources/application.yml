@@ -35,3 +35,15 @@ spring:
       hibernate:
         #        default_schema: order_service
         format_sql: true
+  rabbitmq:
+    username: admin
+    password: admin
+    addresses: amqp://localhost:5672
+
+
+rabbitmq:
+  service:
+    order:
+      exchange-response-name: payment-response-exchange
+      queue-response-name: payment-response-queue
+      queue-request-name: payment-request-queue

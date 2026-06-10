@@ -6,8 +6,8 @@ import com.iprody.ms.order.domain.model.entities.OrderLine;
 import com.iprody.ms.order.domain.model.valueobjects.Money;
 import com.iprody.ms.order.domain.repository.OrderRepository;
 import com.iprody.ms.order.common.ResourceNotFoundException;
-import com.iprody.ms.order.integration.payment.client.PaymentClient;
 import com.iprody.ms.order.integration.payment.client.PaymentClientPendingIdempotencyKey;
+import com.iprody.ms.order.integration.payment.messaging.PaymentRequestSender;
 import com.iprody.ms.order.integration.payment.dto.request.PaymentRequest;
 import com.iprody.ms.order.integration.payment.dto.response.PaymentResponse;
 import com.iprody.ms.order.service.dto.AddressDto;
@@ -19,6 +19,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.bulkhead.BulkheadFullException;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,10 +33,11 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class OrderService {
     private final OrderRepository orderRepository;
-    private final PaymentClient paymentClient;
     private final PaymentClientPendingIdempotencyKey paymentClientIdempotency;
+    private final PaymentRequestSender paymentRequestSender;
 
     @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public OrderDto getById(Long orderId) {
@@ -77,6 +79,22 @@ public class OrderService {
                  DuplicateIdempotencyKeyException ex) {
             throw ex;
         }
+    }
+
+    @Transactional
+    public OrderDto createPaymentAsync(Long orderId, PaymentRequest paymentRequest) {
+        if (paymentRequest.method() == null) {
+            throw new IllegalArgumentException("Необходимо указать способо оплаты заказа");
+        }
+        if (paymentRequest.amount() == null) {
+            throw new IllegalArgumentException("Необходимо указать сумму оплаты заказа");
+        }
+        Order order = getOrder(orderId);
+
+        log.info("Creating payment for order id {}", orderId);
+        paymentRequestSender.send(order, paymentRequest);
+
+        return transformToOrderDto(order);
     }
 
     @Transactional
