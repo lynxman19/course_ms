@@ -43,3 +43,13 @@ commit;
 select * from payment_service.payments;
 
 select * from payment_service.idempotency_keys
+
+---
+
+update payment_service.idempotency_keys
+set status = 'COMPLETED';
+commit;
+
+update payment_service.idempotency_keys
+set status_code = 200;
+commit;

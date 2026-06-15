@@ -35,6 +35,21 @@ spring:
       hibernate:
         #        default_schema: order_service
         format_sql: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: delivery-consumers
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: "com.iprody.ms.delivery.integration.order.messaging.dto.OrderPaidMessage"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 resilience4j:
   circuitbreaker:
@@ -46,3 +61,8 @@ resilience4j:
         waitDurationInOpenState: 30s      # Время, в течение которого цепь останется открытой
         permittedNumberOfCallsInHalfOpenState: 10 # Количество вызовов в полузакрытом состоянии для проверки
         minimumNumberOfCalls: 20          # Минимальное число вызовов для оценки состояния цепи
+
+kafka:
+  order:
+    order-paid-topic: order.paid
+    delivery-created-topic: delivery.created
