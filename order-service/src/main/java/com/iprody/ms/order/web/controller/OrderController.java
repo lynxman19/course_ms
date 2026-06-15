@@ -63,6 +63,12 @@ public class OrderController implements OrderControllerDoc {
         return ResponseEntity.ok(orderResponse);
     }
 
+    @PostMapping("/payment/kafka")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<PaymentResponse> createPaymentKafka(@RequestBody PaymentRequest paymentRequest) {
+        PaymentResponse paymentResponse = orderService.createPaymentKafka(paymentRequest);
+        return ResponseEntity.ok(paymentResponse);
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<OrderResponse> update(@PathVariable("id") Long orderId, @RequestBody OrderRequest orderRequest) {

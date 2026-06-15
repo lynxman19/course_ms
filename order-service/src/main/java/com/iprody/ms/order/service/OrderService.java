@@ -4,8 +4,11 @@ import com.iprody.ms.order.common.DuplicateIdempotencyKeyException;
 import com.iprody.ms.order.domain.model.aggregate.Order;
 import com.iprody.ms.order.domain.model.entities.OrderLine;
 import com.iprody.ms.order.domain.model.valueobjects.Money;
+import com.iprody.ms.order.domain.model.valueobjects.OrderStatus;
 import com.iprody.ms.order.domain.repository.OrderRepository;
 import com.iprody.ms.order.common.ResourceNotFoundException;
+import com.iprody.ms.order.integration.delivery.messaging.OrderPaidPublisher;
+import com.iprody.ms.order.integration.payment.client.PaymentClient;
 import com.iprody.ms.order.integration.payment.client.PaymentClientPendingIdempotencyKey;
 import com.iprody.ms.order.integration.payment.messaging.PaymentRequestSender;
 import com.iprody.ms.order.integration.payment.dto.request.PaymentRequest;
@@ -38,6 +41,8 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final PaymentClientPendingIdempotencyKey paymentClientIdempotency;
     private final PaymentRequestSender paymentRequestSender;
+    private final OrderPaidPublisher orderPaidPublisher;
+    private final PaymentClient paymentClient;
 
     @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public OrderDto getById(Long orderId) {
@@ -75,6 +80,30 @@ public class OrderService {
 
         try {
             return paymentClientIdempotency.createPayment(paymentRequest);
+        } catch (RequestNotPermitted | BulkheadFullException | CallNotPermittedException |
+                 DuplicateIdempotencyKeyException ex) {
+            throw ex;
+        }
+    }
+
+    @Transactional
+    public PaymentResponse createPaymentKafka(PaymentRequest paymentRequest) {
+        if (paymentRequest.method() == null) {
+            throw new IllegalArgumentException("Необходимо указать способо оплаты заказа");
+        }
+        if (paymentRequest.amount() == null) {
+            throw new IllegalArgumentException("Необходимо указать сумму оплаты заказа");
+        }
+
+        Order order = getOrder(paymentRequest.orderId());
+
+        try {
+            PaymentResponse result = paymentClient.createPayment(paymentRequest);
+//            PaymentResponse result =  paymentClientIdempotency.createPayment(paymentRequest);
+
+            order.setStatus(OrderStatus.PAID);
+            orderPaidPublisher.publish(order);
+            return result;
         } catch (RequestNotPermitted | BulkheadFullException | CallNotPermittedException |
                  DuplicateIdempotencyKeyException ex) {
             throw ex;
