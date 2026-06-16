@@ -3,11 +3,12 @@ package com.iprody.ms.order.service;
 import com.iprody.ms.order.common.DuplicateIdempotencyKeyException;
 import com.iprody.ms.order.domain.model.aggregate.Order;
 import com.iprody.ms.order.domain.model.entities.OrderLine;
-import com.iprody.ms.order.domain.model.valueobjects.Money;
-import com.iprody.ms.order.domain.model.valueobjects.OrderStatus;
+import com.iprody.ms.order.domain.model.entities.outbox.AsyncMessage;
+import com.iprody.ms.order.domain.model.valueobjects.*;
 import com.iprody.ms.order.domain.repository.OrderRepository;
 import com.iprody.ms.order.common.ResourceNotFoundException;
-import com.iprody.ms.order.integration.delivery.messaging.OrderPaidPublisher;
+import com.iprody.ms.order.integration.delivery.messaging.config.KafkaDeliveryProperties;
+import com.iprody.ms.order.integration.delivery.messaging.dto.OrderPaidMessage;
 import com.iprody.ms.order.integration.payment.client.PaymentClient;
 import com.iprody.ms.order.integration.payment.client.PaymentClientPendingIdempotencyKey;
 import com.iprody.ms.order.integration.payment.messaging.PaymentRequestSender;
@@ -17,6 +18,7 @@ import com.iprody.ms.order.service.dto.AddressDto;
 import com.iprody.ms.order.service.dto.MoneyDto;
 import com.iprody.ms.order.service.dto.OrderLineDto;
 import com.iprody.ms.order.service.execute.OrderExecute;
+import com.iprody.ms.order.service.outbox.AsyncMessageService;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.bulkhead.BulkheadFullException;
@@ -27,11 +29,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iprody.ms.order.service.dto.OrderDto;
-
-import com.iprody.ms.order.domain.model.valueobjects.Address;
+import tools.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -41,8 +44,11 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final PaymentClientPendingIdempotencyKey paymentClientIdempotency;
     private final PaymentRequestSender paymentRequestSender;
-    private final OrderPaidPublisher orderPaidPublisher;
+//    private final OrderPaidPublisher orderPaidPublisher;
     private final PaymentClient paymentClient;
+    private final AsyncMessageService asyncMessageService;
+    private final KafkaDeliveryProperties kafkaDeliveryProperties;
+    private final JsonMapper mapper;
 
     @CircuitBreaker(name = "orderServiceCircuitBreaker")
     public OrderDto getById(Long orderId) {
@@ -99,10 +105,10 @@ public class OrderService {
 
         try {
             PaymentResponse result = paymentClient.createPayment(paymentRequest);
-//            PaymentResponse result =  paymentClientIdempotency.createPayment(paymentRequest);
 
             order.setStatus(OrderStatus.PAID);
-            orderPaidPublisher.publish(order);
+//            orderPaidPublisher.publish(order);
+            saveToOutbox(order);
             return result;
         } catch (RequestNotPermitted | BulkheadFullException | CallNotPermittedException |
                  DuplicateIdempotencyKeyException ex) {
@@ -147,6 +153,26 @@ public class OrderService {
         }
         orderRepository.deleteById(orderId);
     }
+
+    private void saveToOutbox(Order order) {
+//        try {
+            var payload = new OrderPaidMessage(
+                    order.getOrderId(),
+                    order.getTotalPrice().getPrice()
+            );
+            AsyncMessage message = AsyncMessage.builder()
+                    .id(UUID.randomUUID().toString())
+                    .topic(kafkaDeliveryProperties.orderPaidTopic())
+                    .value(mapper.writeValueAsString(payload))
+                    .type(AsyncMessageType.OUTBOX)
+                    .status(AsyncMessageStatus.CREATED)
+                    .build();
+            asyncMessageService.saveMessage(message);
+//        } catch (JsonProcessingException e) {
+//            throw new RuntimeException("Failed to serialize OrderPaidMessage for outbox", e);
+//        }
+    }
+
 
     private Order getOrder(Long orderId) {
         return orderRepository.findById(orderId)
