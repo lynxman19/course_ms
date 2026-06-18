@@ -4,6 +4,8 @@ import com.iprody.ms.order.integration.delivery.messaging.dto.OrderPaidMessage;
 import com.iprody.ms.order.service.outbox.AsyncMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +32,15 @@ public class AsyncMessageSenderProcessor {
         try {
             OrderPaidMessage payload = mapper.readValue(message.getValue(), OrderPaidMessage.class);
 
-            kafkaTemplate.send(message.getTopic(), message.getId().getId(), payload)
+            // Create the ProducerRecord
+            ProducerRecord<String, OrderPaidMessage> producerRecord = new ProducerRecord<>(message.getTopic(),
+                    message.getId().getId(),
+                    payload);
+
+            // Add custom transport headers if needed
+            producerRecord.headers().add(new RecordHeader("X-Idempotency-Key", payload.orderId().toString().getBytes()));
+
+            kafkaTemplate.send(producerRecord)
                     .exceptionally(e -> {
                         throw new SendingAsyncMessageException(
                                 "Error sending outbox message id=%s".formatted(message.getId()), e);

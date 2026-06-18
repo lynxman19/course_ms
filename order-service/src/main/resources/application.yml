@@ -35,6 +35,11 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      ack-mode: manual # Режим подтверждения обработки сообщений — вручную
+      observation-enabled: true # Включение наблюдения для слушателей Kafka
+    template:
+      observation-enabled: true # Включение наблюдения для KafkaTemplate
 
 
 resilience4j:
